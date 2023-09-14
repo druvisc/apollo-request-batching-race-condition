@@ -1,3 +1,5 @@
+`npm start`, but see `index.jsx` for the issue description.
+
 # Apollo Client Issue Reproduction
 
 Welcome! If you are here then you were likely referred to this repo when reporting an error to [`apollographql/apollo-client`][1]. The core team is invested in making the best client for GraphQL possible, so when you hit an error it is important to the team that the error is resolved as soon as possible.
