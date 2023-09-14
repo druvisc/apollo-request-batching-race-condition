@@ -41,11 +41,14 @@ function App() {
     // Default:
     // fetchPolicy: "cache-first",
 
-    // Workaround:
+    // These also cause the faulty auto-refetch:
     // fetchPolicy: "cache-and-network",
+    // fetchPolicy: "network-only"
+
+    // Workaround:
+    // fetchPolicy: "cache-and-network", // (or "no-cache")
     // nextFetchPolicy: "cache-only"
   });
-
   const [editPerson] = useMutation(EDIT_PERSON, {
     refetchQueries: [
       // The query is auto-refetched w/o adding this:
