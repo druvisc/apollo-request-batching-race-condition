@@ -25,9 +25,9 @@ const ALL_PEOPLE = gql`
   }
 `;
 
-const ADD_PERSON = gql`
-  mutation AddPerson($name: String) {
-    addPerson(name: $name) {
+const EDIT_PERSON = gql`
+  mutation EditPerson($id: String, $name: String) {
+    editPerson(id: $id, name: $name) {
       id
       name
     }
@@ -35,27 +35,57 @@ const ADD_PERSON = gql`
 `;
 
 function App() {
+  const [id, setId] = useState("");
   const [name, setName] = useState("");
-  const { loading, data } = useQuery(ALL_PEOPLE);
+  const { loading, data } = useQuery(ALL_PEOPLE, {
+    // Default:
+    // fetchPolicy: "cache-first",
 
-  const [addPerson] = useMutation(ADD_PERSON, {
-    update: (cache, { data: { addPerson: addPersonData } }) => {
-      const peopleResult = cache.readQuery({ query: ALL_PEOPLE });
+    // Workaround:
+    // fetchPolicy: "cache-and-network",
+    // nextFetchPolicy: "cache-only"
+  });
 
-      cache.writeQuery({
-        query: ALL_PEOPLE,
-        data: {
-          ...peopleResult,
-          people: [...peopleResult.people, addPersonData],
-        },
-      });
-    },
+  const [editPerson] = useMutation(EDIT_PERSON, {
+    refetchQueries: [
+      // The query is auto-refetched w/o adding this:
+      // {
+      //   query: ALL_PEOPLE,
+      // }
+
+      // I could not demonstrate the race-condition due to
+      // no network request happening and the resolver always
+      // having / returning the latest data.
+
+      // The issue is that if you add 'ALL_PEOPLE' to 'refetchQueries' above,
+      // it is batched with the auto-refetch, which happens at the _same time_
+      // as the mutation. 
+      
+      // It does not await the mutation to complete, neither it's executed
+      // for a second time (after the mutation has completed). This
+      // causes a race-condition between the mutation and the auto-refetch.
+
+      // I found 2 workarounds - either manually handle a refetch (adding an
+      // unnecessary request + complexity) or defining 'fetchPolicy' + 'nextFetchPolicy'
+      // as above and setting a different 'fetchPolicy' for the refetch:
+      // {
+      //   query: ALL_PEOPLE,
+      //   fetchPolicy: "network-only"
+      // },
+    ],
   });
 
   return (
     <main>
       <h3>Home</h3>
       <div className="add-person">
+        <label htmlFor="id">Id</label>
+        <input
+          type="text"
+          name="id"
+          value={id}
+          onChange={(evt) => setId(evt.target.value)}
+        />
         <label htmlFor="name">Name</label>
         <input
           type="text"
@@ -65,20 +95,23 @@ function App() {
         />
         <button
           onClick={() => {
-            addPerson({ variables: { name } });
+            editPerson({ variables: { id, name } });
+            setId("");
             setName("");
           }}
         >
-          Add person
+          Edit person
         </button>
       </div>
-      <h2>Names</h2>
+      <h2>People</h2>
       {loading ? (
         <p>Loading…</p>
       ) : (
         <ul>
           {data?.people.map((person) => (
-            <li key={person.id}>{person.name}</li>
+            <li key={person.id}>
+              {person.id} - {person.name}
+            </li>
           ))}
         </ul>
       )}

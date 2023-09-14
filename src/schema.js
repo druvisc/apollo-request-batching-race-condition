@@ -34,18 +34,21 @@ const QueryType = new GraphQLObjectType({
 const MutationType = new GraphQLObjectType({
   name: 'Mutation',
   fields: {
-    addPerson: {
+    editPerson: {
       type: PersonType,
       args: {
+        id: { type: GraphQLString },
         name: { type: GraphQLString },
       },
-      resolve: function (_, { name }) {
-        const person = {
-          id: peopleData[peopleData.length - 1].id + 1,
-          name,
-        };
+      resolve: function (_, { id, name }) {
+        const person = peopleData.find((person) => person.id == id);
 
-        peopleData.push(person);
+        if (!person) {
+          throw new Error("No person found!");
+        }
+
+        person.name = name;
+
         return person;
       }
     },
